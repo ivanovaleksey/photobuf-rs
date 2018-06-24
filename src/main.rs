@@ -1,20 +1,45 @@
-use std::io::Result;
+#[macro_use]
+extern crate quicli;
 
-fn main() {
-    if let Err(e) = try_main() {
-        println!("Error: {}", e);
-    } else {
-        println!("Done");
-    }
+use quicli::prelude::*;
+
+use std::collections::HashMap;
+use std::path::PathBuf;
+use std::{fs, io};
+
+/// Sync photos with Yandex.Disk
+#[derive(Debug, StructOpt)]
+struct Cli {
+    #[structopt(subcommand)]
+    cmd: Command,
+    #[structopt(flatten)]
+    verbosity: Verbosity,
 }
 
-fn try_main() -> Result<()> {
-    use std::fs;
-    use std::collections::HashMap;
+#[derive(Debug, StructOpt)]
+enum Command {
+    #[structopt(name = "pack", about = "Pack items from `source` into by-year folders in `destination`")]
+    Pack {
+        #[structopt(parse(from_os_str))]
+        source: PathBuf,
+        #[structopt(parse(from_os_str))]
+        destination: PathBuf,
+    },
+}
 
+main!(|args: Cli, log_level: verbosity| {
+    match args.cmd {
+        Command::Pack {
+            source,
+            destination,
+        } => pack(source, destination),
+    };
+});
+
+fn pack(src: PathBuf, dst: PathBuf) -> io::Result<()> {
     let mut hash: HashMap<u16, Vec<String>> = HashMap::new();
 
-    let entries = fs::read_dir("./buf/in").unwrap();
+    let entries = fs::read_dir(&src).unwrap();
     for entry in entries {
         let entry = entry?;
         let name = entry.file_name();
@@ -26,13 +51,19 @@ fn try_main() -> Result<()> {
             .or_insert_with(|| vec![name]);
     }
 
-    fs::remove_dir_all("./buf/out").unwrap();
+    if dst.exists() {
+        fs::remove_dir_all(&dst).unwrap();
+    }
+
     for (year, names) in &hash {
-        fs::create_dir_all(format!("./buf/out/{}", year)).unwrap();
+        let year = year.to_string();
+        fs::create_dir_all(dst.join(&year)).unwrap();
 
         for name in names.iter() {
-            let from = format!("./buf/in/{}", name);
-            let to = format!("./buf/out/{}/{}", year, name);
+            let from = src.join(name);
+            let to = dst.join(&year).join(name);
+
+            debug!("Copy from: {:?}; to: {:?}", from, to);
             fs::copy(from, to).unwrap();
         }
     }

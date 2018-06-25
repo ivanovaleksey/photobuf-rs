@@ -1,7 +1,9 @@
+extern crate futures;
 extern crate hyper;
 extern crate hyper_tls;
 #[macro_use]
 extern crate quicli;
+extern crate tokio_timer;
 
 use hyper::{client, Client};
 use hyper_tls::HttpsConnector;

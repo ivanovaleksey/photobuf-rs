@@ -11,7 +11,9 @@ pub fn call(src: PathBuf, dst: PathBuf) -> Result<()> {
     for entry in entries {
         let entry = entry?;
         let name = entry.file_name();
-        let name = name.into_string().map_err(|_| err_msg("Cannot convert OsString into String"))?;
+        let name = name
+            .into_string()
+            .map_err(|_| err_msg("Cannot convert OsString into String"))?;
         let year: u16 = name[..4].parse()?;
 
         hash.entry(year)

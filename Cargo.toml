@@ -5,3 +5,5 @@ authors = ["Aleksey Ivanov <ialexxei@gmail.com>"]
 
 [dependencies]
 quicli = "0.3.0"
+hyper = "0.12.2"
+hyper-tls = "0.2.1"
